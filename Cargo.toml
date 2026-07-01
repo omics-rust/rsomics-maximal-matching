@@ -1,0 +1,29 @@
+[package]
+name = "rsomics-maximal-matching"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.91"
+description = "Maximal matching on undirected graphs — value-exact port of networkx.maximal_matching"
+license = "MIT OR Apache-2.0"
+keywords = ["bioinformatics", "graph", "matching", "network"]
+categories = ["command-line-utilities", "science"]
+repository = "https://github.com/omics-rust/rsomics-maximal-matching"
+
+[[bin]]
+name = "rsomics-maximal-matching"
+path = "src/main.rs"
+
+[lib]
+name = "rsomics_maximal_matching"
+path = "src/lib.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "matching"
+harness = false
