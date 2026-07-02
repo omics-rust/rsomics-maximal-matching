@@ -148,6 +148,60 @@ fn string_nodes_with_mixed_labels() {
 }
 
 // --------------------------------------------------------------------------
+// Self-loops — networkx never matches a self-loop (it would use one node
+// twice). Expected sets regenerated from networkx 3.6.1.
+// --------------------------------------------------------------------------
+
+#[test]
+fn self_loop_then_incident() {
+    // nx: G.add_edge('a','a'); G.add_edge('a','b') → {('a','b')}
+    let got = run("a a\na b");
+    assert_eq!(got, expected(&[("a", "b")]));
+}
+
+#[test]
+fn self_loop_only() {
+    // A lone self-loop registers the node but yields no matching edge.
+    let got = run("a a");
+    assert_eq!(got, Vec::<(String, String)>::new());
+}
+
+#[test]
+fn incident_then_self_loop() {
+    // Real edge taken first; the later self-loop on a matched node is skipped.
+    let got = run("a b\na a");
+    assert_eq!(got, expected(&[("a", "b")]));
+}
+
+#[test]
+fn self_loop_first_star() {
+    // Self-loop on the star centre precedes its spokes; first spoke matches.
+    let got = run("x x\nx y\nx z");
+    assert_eq!(got, expected(&[("x", "y")]));
+}
+
+#[test]
+fn self_loop_isolated_plus_edge() {
+    // Isolated self-loop node contributes nothing; the disjoint edge matches.
+    let got = run("s s\np q");
+    assert_eq!(got, expected(&[("p", "q")]));
+}
+
+#[test]
+fn multi_self_loops_and_path() {
+    // Self-loops on a, b, c interleaved with path a-b-c → {('a','b')}.
+    let got = run("a a\nb b\na b\nb c\nc c");
+    assert_eq!(got, expected(&[("a", "b")]));
+}
+
+#[test]
+fn self_loop_mid_chain() {
+    // Self-loop on 2 sits between path edges; matching {('1','2'),('3','4')}.
+    let got = run("1 2\n2 2\n2 3\n3 4");
+    assert_eq!(got, expected(&[("1", "2"), ("3", "4")]));
+}
+
+// --------------------------------------------------------------------------
 // Random graphs (gnm) — edge lists hardcoded from networkx output
 // --------------------------------------------------------------------------
 

@@ -36,7 +36,8 @@ impl Graph {
     /// Add an undirected edge (parallel edges deduplicated like `nx.Graph`).
     pub fn add_edge(&mut self, u: &str, v: &str) {
         if u == v {
-            // nx.Graph stores self-loops and maximal_matching matches them.
+            // nx.Graph stores self-loops; maximal_matching skips them (a
+            // self-loop would use one node twice). The node still registers.
             let ui = self.intern(u);
             if !self.adj[ui].contains(&ui) {
                 self.adj[ui].push(ui);
@@ -82,13 +83,14 @@ impl Graph {
     /// Greedy maximal matching in `nx.Graph.edges()` order.
     ///
     /// Returns matched pairs as node-index pairs.  The caller canonicalises
-    /// and sorts for output.
+    /// and sorts for output.  Self-loops (u == v) are skipped exactly as
+    /// networkx does — a self-loop is not a valid matching edge.
     pub fn maximal_matching(&self) -> Vec<(usize, usize)> {
         let n = self.node_order.len();
         let mut matched = vec![false; n];
         let mut result = Vec::new();
         for (u, v) in self.edges() {
-            if !matched[u] && !matched[v] {
+            if u != v && !matched[u] && !matched[v] {
                 matched[u] = true;
                 matched[v] = true;
                 result.push((u, v));
