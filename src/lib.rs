@@ -110,14 +110,14 @@ impl Default for Graph {
     }
 }
 
-/// Parse an edge-list text (stdin format: `u v` per line, `#` comments and
-/// blank lines skipped).  Returns the `Graph` with insertion order matching
-/// `nx.Graph().add_edges_from(lines)`.
+/// Parse an edge-list text (stdin format: `u v` per line).  Returns the `Graph`
+/// with insertion order matching `nx.Graph().add_edges_from(lines)`.
 pub fn parse_edgelist(text: &str) -> Graph {
     let mut g = Graph::new();
     for line in text.lines() {
-        let line = line.trim();
-        if line.is_empty() || line.starts_with('#') {
+        // nx.parse_edgelist strips a '#' comment anywhere in the line before tokenising.
+        let line = line.split('#').next().unwrap_or("").trim();
+        if line.is_empty() {
             continue;
         }
         let mut parts = line.split_ascii_whitespace();
@@ -195,6 +195,30 @@ mod tests {
         assert!(canon.contains(&("1", "2")));
         assert!(canon.contains(&("3", "4")));
         assert_eq!(canon.len(), 2);
+    }
+
+    fn matching_labels(text: &str) -> Vec<(String, String)> {
+        let g = parse_edgelist(text);
+        let mut m: Vec<(String, String)> = g
+            .maximal_matching()
+            .iter()
+            .map(|&(u, v)| {
+                let (a, b) = canonical_edge(g.node_label(u), g.node_label(v));
+                (a.to_string(), b.to_string())
+            })
+            .collect();
+        m.sort();
+        m
+    }
+
+    #[test]
+    fn inline_comment_matches_comment_free() {
+        // '#' truncates the line before tokenising: "1 2#c" is edge (1,2), and
+        // "0 #x" collapses to a single token and is skipped — same graph as the
+        // comment-free text.
+        let with_comments = "0 1\n1 2#c\n2 3\n0 #x\n";
+        let clean = "0 1\n1 2\n2 3\n";
+        assert_eq!(matching_labels(with_comments), matching_labels(clean));
     }
 
     #[test]
